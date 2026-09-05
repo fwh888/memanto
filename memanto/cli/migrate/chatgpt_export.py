@@ -195,7 +195,7 @@ def load_conversations(path: str | Path) -> list[dict[str, Any]]:
             "Unrecognized ChatGPT export: expected a JSON array of conversations "
             f"at {path}"
         )
-    return data
+    return [item for item in data if isinstance(item, dict)]
 
 
 def export_chatgpt_memories(

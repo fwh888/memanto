@@ -36,6 +36,31 @@ def test_load_conversations_rejects_non_array(tmp_path):
         load_conversations(bad)
 
 
+def test_load_conversations_filters_non_dict_entries(tmp_path):
+    """Non-object entries in the array must not abort the export."""
+    bad = tmp_path / "mixed.json"
+    bad.write_text(
+        json.dumps([{"id": "conv-a"}, "not-a-dict", None, 42, {"id": "conv-b"}]),
+        encoding="utf-8",
+    )
+    conversations = load_conversations(bad)
+    assert [c["id"] for c in conversations] == ["conv-a", "conv-b"]
+
+
+def test_iso_timestamp_guards_out_of_range_epoch():
+    """A corrupt epoch must not raise OverflowError; the raw value survives."""
+    import importlib.util
+
+    script = Path(__file__).resolve().parents[1] / "examples/migrations/chatgpt-okf/export_okf.py"
+    spec = importlib.util.spec_from_file_location("chatgpt_okf_ts", script)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    assert module._iso_timestamp(1e20) == "1e+20"
+    assert module._iso_timestamp(1710000000).startswith("2024-03-09")
+
+
 def test_export_extracts_only_active_user_messages():
     export = _fixture_export()
     contents = [m["content"] for m in export["memories"]]

@@ -224,7 +224,10 @@ def main(argv: list[str] | None = None) -> int:
 def _iso_timestamp(value: Any) -> str:
     """Normalize a unix-epoch or ISO timestamp into an ISO-8601 UTC string."""
     if isinstance(value, (int, float)) and not isinstance(value, bool):
-        return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+        try:
+            return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+        except (OverflowError, OSError, ValueError):
+            return str(value)
     text = str(value)
     if text.endswith("Z"):
         text = text[:-1] + "+00:00"
